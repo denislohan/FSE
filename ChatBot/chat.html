@@ -1,0 +1,118 @@
+<html>
+<head>
+	<title> Chat Room</title>
+	<link rel = "stylesheet" href ="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+	<script src = "http://code.jquery.com/jquery-latest.min.js"></script>
+     <script src = "/socket.io/socket.io.js"></script>
+</head>
+<style>
+
+
+</style>
+ 
+<body>
+	<div class="container">
+	      <a id= "welcome"> </a>
+
+		<div class ="row" id ="messageArea">
+			<div class ="col-md-4">
+				<div class ="well">
+					<h3>Users Online</h3>
+					<ul class ="list-group" id = "users"></ul>
+				</div>
+			</div>
+			<div class="col-md-8">
+				<div class ="chat" id= "chat"></div>
+				<form id = "messForm">
+					<div class ="form-group">
+						<label> write message</label>  
+						<textarea class ="form-control" id ="message"></textarea>
+						<br />
+						<input type = "submit" class = "btn btn-primary" value ="push message">
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+	
+
+<script>
+var myData= (<%-chatData%>);
+var name = '<h2>Welcome '+myData[0].user+'</h2>'// the variable holding the username of the client (on fron end)
+window.onload= function(){
+document.getElementById("welcome").innerHTML=name;
+}
+</script>
+
+<script>
+$(function(){
+    
+	 var myData= (<%-chatData%>);
+	 //var name = '<h2>Welcome '+myData[0].user+'</h2>'// the variable holding the username of the client (on fron end)
+     
+	
+	// actual data from chat history
+	
+	// useful variables
+	var socket = io.connect();
+	var $messForm = $('#messForm');
+	var $message = $('#message');
+    var $chat = $('#chat');
+	var nickname;// the variable to hold the name to appear on the chat (either "me" of the actual username)
+	
+	
+	var chatHistory= myData[1];
+	//console.log('length here'+chatHistory.length);
+	var chatSize=chatHistory.length;
+	var k;
+	
+	for(k=0; k<chatSize;k++){
+	
+	var myName= myData[0].user;
+	var tempName=chatHistory[k].usrname; // temp var to store the displayable username
+	if (chatHistory[k].usrname=== myName){// in case i am the one who is typing
+		tempName='me';
+		}
+		
+	$chat.append('<html><div class ="well">'+ tempName+' &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp  '+
+	chatHistory[k].timestamp+'<br/><br/>'+ chatHistory[k].chat+'</div></html>');
+	
+	
+	
+	}
+	
+	
+	
+	//var size= 
+	
+	//when submit is done on the form
+    $messForm.submit(function(e){
+	e.preventDefault();
+	//a variable to take data from html to server
+	var mydata= [];
+	mydata[0]=$message.val();
+	mydata[1]= myData[0].user; // passing the client username to the server during chat
+	socket.emit('send message',mydata);
+	$message.val('');  // clearing the form
+	
+		});
+	// on receive
+	socket.on('new message',function(data){
+	console.log(data.msg);
+	//appending the incoming message 
+	if(data.msg[1]=== myData[0].user)  // let use me for our messages
+		nickname= 'me';
+	else
+	    nickname=data.msg[1];
+	
+	
+	$chat.append('<html><div class ="well">'+ nickname+' &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp'+new Date+'<br/><br/>'+ data.msg[0]+'</div></html>');
+	
+	});
+
+});
+</script>
+
+
+</body>
+</html>
